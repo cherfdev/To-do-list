@@ -1,9 +1,8 @@
 <?php
 require 'connexion.php';
 
-// Fonction pour ajouter une nouvelle tâche
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $title = isset($_POST['title']) ? trim($_POST['title']) : '';
+function addTask($conn, $title)
+{
     if (!empty($title)) {
         $stmt = $conn->prepare("INSERT INTO todo (Titre) VALUES (:title)");
         $stmt->bindParam(':title', $title);
@@ -11,24 +10,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Fonction pour marquer une tâche comme terminée
-if (isset($_POST['task_id'])) {
-    $taskId = $_POST['task_id'];
+function toggleTaskCompletion($conn, $taskId)
+{
     $stmt = $conn->prepare("UPDATE todo SET verification = NOT verification WHERE id = :id");
     $stmt->bindParam(':id', $taskId);
     $stmt->execute();
 }
 
-// Fonction pour supprimer une tâche
-if (isset($_POST['delete_id'])) {
-    $deleteId = $_POST['delete_id'];
+function deleteTask($conn, $deleteId)
+{
     $stmt = $conn->prepare("DELETE FROM todo WHERE id = :id");
     $stmt->bindParam(':id', $deleteId);
     $stmt->execute();
 }
 
-$todo = $conn->query("SELECT * FROM todo ORDER BY id DESC");
+function getTasks($conn)
+{
+    return $conn->query("SELECT * FROM todo ORDER BY id DESC");
+}
+
+// Gérer les actions en fonction de la requête
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $title = isset($_POST['title']) ? trim($_POST['title']) : '';
+    addTask($conn, $title);
+
+    if (isset($_POST['task_id'])) {
+        $taskId = $_POST['task_id'];
+        toggleTaskCompletion($conn, $taskId);
+    }
+
+    if (isset($_POST['delete_id'])) {
+        $deleteId = $_POST['delete_id'];
+        deleteTask($conn, $deleteId);
+    }
+}
+
+$todo = getTasks($conn);
 ?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
